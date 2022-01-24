@@ -1,6 +1,6 @@
 {
     "database": {
-        "uri": "postgres://atxfcweo:dgy0zuFMAvUcA9MJxBxhnQz745WCfCYL@kesavan.db.elephantsql.com/atxfcweo"
+        "uri": "<seu db>"
     },
     "authentication": {
         "cryptKey": "my_salt"
