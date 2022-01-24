@@ -1,8 +1,9 @@
-import { application } from "express";
-import  DatabaseError  from "../model/errors/database.error.model";
+import config from 'config';
+import  DatabaseError  from "../errors/database.error";
 import User from "../model/user.model";
-import db from "../routes/db";
+import db from "../db";
 
+const authenticationCryptKey = config.get<string>('authentication.cryptKey');
 class userRepository{
 
     async findAllUsers(): Promise<User[]> {
@@ -41,7 +42,7 @@ class userRepository{
             SELECT uuid, username
             FROM application_user
             WHERE uuid = $1
-            AND password = crypt($2, 'my_salt')
+            AND password = crypt($2, '${authenticationCryptKey}')
             `
             const values = [username, password];
             const {rows} = await db.query<User>(query, values);
@@ -53,43 +54,58 @@ class userRepository{
     }
 
     async create(user: User): Promise<string>{
-        const script = `
-            INSERT INTO application_user (username, password)
-            VALUES ($1, crypt($2, 'my_salt'))
-            RETURNING uuid
-        `;
+        try {
+            const script = `
+                INSERT INTO application_user (
+                    username, 
+                    password
+                ) 
+                VALUES ($1, crypt($2, '${authenticationCryptKey}')) 
+                RETURNING uuid
+            `;
 
-        const values = [user.username, user.password];
+            const values = [user.username, user.password];
+            const queryResult = await db.query<{ uuid: string }>(script, values);
 
-        const {rows} = await db.query<{uuid: string}>(script, values);
-        const [newUser] = rows;
-        return newUser.uuid;
+            const [row] = queryResult.rows;
+            return row.uuid;
+        } catch (error) {
+            throw new DatabaseError('Erro ao inserir usuário');
+        }
     }
 
     async update(user: User): Promise<void>{
-        const script = `
-            UPDATE application_user
-            SET
-                username = $1,
-                password = crypt($2, 'my_salt')
-            WHERE uuid = $3
-        `;
+        try {
+            const script = `
+                UPDATE application_user
+                SET
+                    username = $2,
+                    password = crypt($3, '${authenticationCryptKey}')
+                WHERE uuid = $1            
+            `;
 
-        const values = [user.username, user.password, user.uuid];
-
-        await db.query(script, values);
+            const values = [user.uuid, user.username, user.password];
+            await db.query(script, values);
+        } catch (error) {
+            throw new DatabaseError('Erro ao atualizar usuário');
+        }
 
     }
 
     async remove(uuid: string): Promise<void>{
-        const script = `
-            DELETE
-            FROM application_user
-            WHERE uuid = $1
-        `;
-        const values = [uuid];
-        await db.query(script, values);
-    }
+        try {
+            const script = `
+                DELETE 
+                FROM application_user 
+                WHERE uuid = $1
+            `;
+
+            const values = [uuid];
+            await db.query(script, values);
+        } catch (error) {
+            throw new DatabaseError('Erro ao deletar usuário');
+        }
+}
 }
 
 export default new userRepository();

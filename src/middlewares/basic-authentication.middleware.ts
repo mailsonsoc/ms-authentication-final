@@ -1,39 +1,37 @@
 import { Response, NextFunction, Request } from 'express';
-import ForbiddenError from '../model/errors/forbidden.error.model';
+import {ForbiddenError} from '../errors/forbidden.error';
 import userRepository from '../repositories/user.repository';
 
-async function basicAuthenticationMiddleware(req: Request, res: Response, next: NextFunction){
+const basicAuthMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const authorizationHeader = req.headers['authorization'];
-
-        if(!authorizationHeader){
-            throw new ForbiddenError('Credenciais não informadas');
+        const authorizationHeader = req.headers.authorization;
+    
+        if (!authorizationHeader) {
+            throw new ForbiddenError({ log: 'Credenciais not found' });
         }
-
-        const [authenticationType, token] = authorizationHeader.split(' ');
-
-        if(authenticationType !== 'Basic' || !token){
-            throw new ForbiddenError('Tipo de identificação inválido');
+    
+        const [authorizationType, base64Token] = authorizationHeader.split(' ');
+    
+        if (authorizationType !== 'Basic') {
+            throw new ForbiddenError({ log: 'Invalid authorization type' });
         }
-
-        const tokenContent = Buffer.from(token, 'base64').toString('utf-8');
-
-        const[username, password] = tokenContent.split(':');
-
-        if(!username || !token){
-            throw new ForbiddenError('Credenciais não preenchidas');
+    
+        const [username, password] = Buffer.from(base64Token, 'base64').toString('utf-8').split(':');
+    
+        if (!username || !password) {
+            throw new ForbiddenError({ log: 'Credenciais not found' });
         }
-
+    
         const user = await userRepository.findByUsernameAndPassword(username, password);
-        
-        if(!user){
-            throw new ForbiddenError('Usuário ou senha inválidos!');
+    
+        if (!user) {
+            throw new ForbiddenError({ log: 'Invalid credentials' });
         }
-
+    
         req.user = user;
+        return next();
     } catch (error) {
-        next(error);
+        return next(error);
     }
 }
-
-export default basicAuthenticationMiddleware;
+export default basicAuthMiddleware;

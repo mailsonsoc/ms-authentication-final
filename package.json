@@ -12,12 +12,14 @@
   "author": "Mailson Albuquerque",
   "license": "ISC",
   "dependencies": {
+    "config": "^3.3.7",
     "express": "^4.17.2",
     "http-status-codes": "^2.2.0",
     "jsonwebtoken": "^8.5.1",
     "pg": "^8.7.1"
   },
   "devDependencies": {
+    "@types/config": "^0.0.41",
     "@types/express": "^4.17.13",
     "@types/jsonwebtoken": "^8.5.8",
     "@types/node": "^17.0.9",

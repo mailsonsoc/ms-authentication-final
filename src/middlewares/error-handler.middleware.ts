@@ -1,16 +1,28 @@
 import { Request, Response, NextFunction } from 'express';
-import DatabaseError from '../model/errors/database.error.model';
 import { StatusCodes } from 'http-status-codes';
-import ForbiddenError from '../model/errors/forbidden.error.model';
+import ForbiddenError from '../errors/forbidden.error';
+import HttpResponse from '../model/http-response.model';
 
-function errorHandler(error: any, req: Request, res: Response, next: NextFunction){
-    if(error instanceof DatabaseError){
-        res.sendStatus(StatusCodes.BAD_REQUEST);
-    } else if(error instanceof ForbiddenError){
-        res.sendStatus(StatusCodes.FORBIDDEN);
-    } else {
-        res.sendStatus(StatusCodes.INTERNAL_SERVER_ERROR);
-        }
+const UNEXPECTED_ERROR = new HttpResponse<void>(
+    StatusCodes.INTERNAL_SERVER_ERROR,
+    { message: 'unexpected-error' }
+);
+
+const FORBIDDEN_ERROR = new HttpResponse<void>(
+    StatusCodes.FORBIDDEN,
+    { message: 'forbidden' }
+);
+
+const errorHanddlerMiddleware = (error: Error, req: Request, res: Response, next: NextFunction) => {
+    let errorResponse = UNEXPECTED_ERROR;
+
+    if (error instanceof ForbiddenError) {
+        errorResponse = FORBIDDEN_ERROR;
+    }
+
+    console.error(error);
+    return res.status(errorResponse.status).send(errorResponse.body);
 }
 
-export default errorHandler;
+
+export default errorHanddlerMiddleware;

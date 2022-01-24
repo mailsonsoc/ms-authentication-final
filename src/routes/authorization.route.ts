@@ -2,29 +2,20 @@ import { NextFunction, Request, Response, Router } from 'express';
 import JWT from 'jsonwebtoken';
 import { StatusCodes } from 'http-status-codes';
 import basicAuthenticationMiddleware from '../middlewares/basic-authentication.middleware';
-import ForbiddenError from '../model/errors/forbidden.error.model';
 
 const authorizationRoute = Router ();
 
 authorizationRoute.post('/token', basicAuthenticationMiddleware , async (req: Request, res: Response, next:NextFunction) =>{
-    
     try {
+            const token = JWT.sign({}, 'teste', {
+                audience: 'consumer-uuid or api key',
+                subject: req.user?.uuid
+            });
         
-        const user = req.user;
-
-        if(!user){
-            throw new ForbiddenError('Usuário não informado!');
+            return res.status(StatusCodes.OK).json({ token });
+        } catch (error) {
+            next(error);
         }
-        const jwtPayload = {username: user.username};
-        const jwtOptions = {subject: user?.uuid};
-        const secretKey = 'my_secret_key';
-
-        const jwt = JWT.sign(jwtPayload, secretKey, jwtOptions);
-        res.status(StatusCodes.OK).json({token: jwt});
-
-    } catch (error) {
-        next(error);
-    }
 });
 
 

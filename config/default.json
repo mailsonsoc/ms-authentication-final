@@ -1,0 +1,8 @@
+{
+    "database": {
+        "uri": "postgres://atxfcweo:dgy0zuFMAvUcA9MJxBxhnQz745WCfCYL@kesavan.db.elephantsql.com/atxfcweo"
+    },
+    "authentication": {
+        "cryptKey": "my_salt"
+    }
+}
